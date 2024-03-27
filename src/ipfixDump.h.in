@@ -1,0 +1,155 @@
+/*
+ *  Copyright 2014-2023 Carnegie Mellon University
+ *  See license information in LICENSE.txt.
+ */
+/**
+ *  @file ipfixDumpPrint.h
+ */
+/*
+ *  ------------------------------------------------------------------------
+ *  Authors: Emily Sarneso
+ *  ------------------------------------------------------------------------
+ */
+
+#include <fixbuf/public.h>
+
+#define FIXBUF_PACKAGE_NAME    "@FIXBUF_PACKAGE_NAME@"
+#define FIXBUF_PACKAGE_VERISON "@FIXBUF_PACKAGE_VERSION@"
+#define FIXBUF_PACKAGE_DATADIR "@FIXBUF_PACKAGE_DATADIR@"
+
+#define CERT_IPFIX_BASENAME    "cert_ipfix.xml"
+
+/* minimum width to use for an IE name */
+#define MIN_IENAME_WIDTH     28
+
+typedef struct tmplContext_st {
+    /* the indexes of the templateId(0) and templateName(1) elements of a
+     * template metadata template */
+    uint16_t   meta_tmpl[2];
+    /* number of elements in the template */
+    uint32_t   count;
+    /* width to use when printing IE name; computed from longest name in the
+     * template with a floor of MIN_IENAME_WIDTH */
+    int        iename_width;
+    /* memory octets required to hold record that uses this template */
+    uint16_t   len;
+    /* the template ID */
+    uint16_t   tid;
+    /* the template scope */
+    uint16_t   scope;
+    /* the position of the endTime element when 'contains_end_time' is true */
+    uint16_t   end_time_index;
+    /* whether this template describes template metadata; if TRUE, the
+     * 'meta_tmpl[]' member contains location of ID and NAME */
+    gboolean   is_meta_template;
+    /* whether this template describes element metadata (RFC5610) */
+    gboolean   is_meta_element;
+    /* whether this template contains the endTime element; if TRUE, the
+     * 'end_time_index' member contains the location of the element */
+    gboolean   contains_end_time;
+} tmplContext_t;
+
+
+/**
+ *  How to display octetArray values
+ */
+typedef enum OctetArrayFormat_en {
+    /* show nothing (only the length) */
+    OCTET_ARRAY_NONE,
+    /* show as a hexadecimal value with a leading 0x */
+    OCTET_ARRAY_HEXADECIMAL,
+    /* show as a hexadecimal value if length is <= 8, nothing otherwise*/
+    OCTET_ARRAY_SHORTHEX,
+    /* show as a base64 value */
+    OCTET_ARRAY_BASE64,
+    /* show as a string with non-ascii encoded as escaped UTF-8 */
+    OCTET_ARRAY_STRING,
+    /* show in the style of `hexdump -vC` */
+    OCTET_ARRAY_HEXDUMP
+} OctetArrayFormat_t;
+
+/**
+ *  How to display string values
+ */
+typedef enum StringFormat_en {
+    /* show nothing (only the length) */
+    STRING_FMT_NONE,
+    /* show as a quoted string with TAB, NEWLINE, CARRIAGE_RETURN,
+     * double-quote, and backslash printed as \t, \n, \r, \", \\, and
+     * non-ascii encoded as escaped hexadecimal (eg, \x83) */
+    STRING_FMT_QUOTED,
+    /* show as a raw unquoted string as in ipfixDump v2 */
+    STRING_FMT_RAW,
+    /* show as a base64 value */
+    STRING_FMT_BASE64,
+    /* show as a hexadecimal value with a leading 0x */
+    STRING_FMT_HEXADECIMAL,
+    /* show in the style of `hexdump -vC` */
+    STRING_FMT_HEXDUMP
+} StringFormat_t;
+
+
+void
+idPrintTemplate(
+    FILE                 *fp,
+    const fbTemplate_t   *tmpl,
+    const tmplContext_t  *ctx);
+
+void
+idPrintDataRecord(
+    FILE                 *fp,
+    const tmplContext_t  *tctx,
+    const fbRecord_t     *record,
+    unsigned int          rec_count,
+    const char           *rec_title,
+    const char           *str_prefix);
+
+void
+idPrintTimestamp(
+    FILE                     *fp,
+    const struct timespec    *ts,
+    fbInfoElementDataType_t   datatype);
+
+extern int            id_tmpl_stats[];
+extern GHashTable    *template_names;
+extern OctetArrayFormat_t octet_array_format;
+extern StringFormat_t string_format;
+extern gboolean       suppress_record_number;
+
+/*
+ *  @DISTRIBUTION_STATEMENT_BEGIN@
+ *  libfixbuf 3.0.0
+ *
+ *  Copyright 2022 Carnegie Mellon University.
+ *
+ *  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+ *  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+ *  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+ *  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+ *  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+ *  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+ *  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+ *  INFRINGEMENT.
+ *
+ *  Released under a GNU GPL 2.0-style license, please see LICENSE.txt or
+ *  contact permission@sei.cmu.edu for full terms.
+ *
+ *  [DISTRIBUTION STATEMENT A] This material has been approved for public
+ *  release and unlimited distribution.  Please see Copyright notice for
+ *  non-US Government use and distribution.
+ *
+ *  Carnegie Mellon(R) and CERT(R) are registered in the U.S. Patent and
+ *  Trademark Office by Carnegie Mellon University.
+ *
+ *  This Software includes and/or makes use of the following Third-Party
+ *  Software subject to its own license:
+ *
+ *  1. GLib-2.0 (https://gitlab.gnome.org/GNOME/glib/-/blob/main/COPYING)
+ *     Copyright 1995 GLib-2.0 Team.
+ *
+ *  2. Doxygen (http://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+ *     Copyright 2021 Dimitri van Heesch.
+ *
+ *  DM22-0006
+ *  @DISTRIBUTION_STATEMENT_END@
+ */

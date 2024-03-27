@@ -1,0 +1,543 @@
+Version 3.0.0.alpha2: 2023-02-09
+================================
+
+Fixed long-standing bugs in transcoding the following data types when their sizes differ: signed integers with negative values, doubles, and fixed-size strings and octet-arrays.  This may introduce inconsistencies when tools are compiled with different versions of libfixbuf.
+
+Changed libfixbuf to reject a template and return an error when it receives a template that uses an invalid length for an element.  Previously libfixbuf printed a warning and accepted the template.
+
+Added support for a hexdump argument to the --string-format and --octet-format switches of ipfixDump.
+
+Fixed a bug from 3.0.0.alpha1 where NTP-encoded time values were not decoded correctly by fbRecordGetValueForField() and similar functions.
+
+Changed fbSubTemplateMultiListEntryClear() to zero the tmpl and tmplID members.
+
+Changed fbDecodeBasicList() to free and reallocate its memory on each call.
+
+Version 2.4.2: 2023-02-09
+=========================
+
+Updated CERT IPFIX elements to include those added in libfixbuf 3.0.  This update does not include the element name changes that were part of that release.
+
+Version 3.0.0.alpha1: 2022-02-24
+================================
+
+Made many changes to functions and public structs that break compatibilty with previous releases of libfixbuf.
+
+Changed fbTemplate_t to reference a new object type, fbTemplateField_t,
+resulting in changes to many function signatures.  The TemplateField includes
+the offset of the element's value, making it easier to get a value from a
+record.
+
+Changed and removed members of fbInfoElement_t.  Added several macros to get
+values from an fbInfoElement_t.
+
+Added a new type, fbTemplateInfo_t, to hold the name and description of a
+Template and additional information about it.  A TemplateInfo contains a
+SubTemplateList of fbBasicListInfo_t, a new type to describe the information
+element IDs of a BasicList and of the element it contains.
+
+Changed fbSessionAddTemplate() to take an additional parameter: an
+fbTemplateInfo_t, which may be NULL.  fbSessionAddTemplateWithMetadata() has
+been removed.
+
+Changed fbSessionSetMetadataExportTemplates() to take an additional paramter:
+the template ID for the fbBasicListInfo_t.
+
+Removed support for the Spread Toolkit.
+
+Renamed the following functions:
+fBufSetAutomaticInsert() to fBufSetAutomaticElementInsert(),
+fBufSetAutomaticMode() to fBufSetAutomaticNextMessage(),
+fbBasicListRealloc() to fbBasicListResize(),
+fbListValidSemantic() to fbListSemanticsIsValid(),
+fbSubTemplateListRealloc() to fbSubTemplateListResize(),
+fbSubTemplateMultiListEntryRealloc() to fbSubTemplateMultiListEntryResize(),
+fbSubTemplateMultiListRealloc() to fbSubTemplateMultiListResize(), and
+fbTemplateGetIndexedIE() to fbTemplateGetFieldByPosition().
+
+Removed functions fbBasicListInitWithOwnBuffer(),
+fbSessionEnableTemplateMetadata(), fbSessionEnableTypeMetadata(), and
+fbSubTemplateListInitWithOwnBuffer().
+
+Removed fbInfoModelTypeInfoRecord() and fbTemplateMetadataRecord().  Added a
+replaced function, fbTemplateIsMetadata(), that checks whether a Template is
+for describing metadata: RFC5610 records (Info Element descriptions) or
+Template metadata.
+
+Removed macros FB_IE_BASIC_LIST, FB_IE_SUBTEMPLATE_LIST, and
+FB_IE_SUBTEMPLATE_MULTILIST.
+
+Changed the members of fbSubTemplateList_t.
+
+Made major changes to the output of ipfixDump, and modified many of its
+command line switches.
+
+Added a new type, fbRecord_t, that holds the data for a record read from a
+stream and the Template that describes that data.  Added functions,
+fBufNextRecord() and others, to support the new type and get values from a
+fbRecord_t.
+
+Added a function to copy an fbRecord_t from one fbTemplate_t to another.
+
+Added a new command line tool, ipfix2json, to convert an IPFIX file to JSON.
+This tool is built by default; use --disable-tools to build the library only.
+
+Updated the ABI to use 'const' on more parameters and more return values.
+
+Added new convenience functions, fbSessionAddTemplatesForExport() and
+fBufSetTemplatesForExport(), that handle adding or setting both the internal
+and export templates.
+
+Added convenience functions to copy an incoming templates to an export Session.
+
+Added a new function, fbBasicListInitWithLength(), to initialize a BasicList
+and use reduced length encoding for the element.
+
+Added convenience macros fbBLNext(), fbSTLNext(), fbSTMLNext(), and
+fbSTMLEntryNext() for iterating over fbBasicList_t, fbSubTemplateList_t,
+fbSubTemplateMultiList_t and fbSubTemplateMultiListEntry_t objects.
+
+Added a Template iterator, fbTemplateIter_t, to visit the TemplateFields in a
+Template.
+
+Added functions to copy and compare Templates.  Added functions to find an
+element in a Template and return a TemplateField.
+
+Added a function to set the context object on a Template.
+
+Added an enum for the Information Element semantics, fbInfoElementSemantics_t.
+Added an enum for the structured data (list) semantics, fbListSemantics_t.
+
+Changed license to GNU General Public License (GPL) Version 2, June 1991.
+
+Version 2.4.1: 2020-12-22
+=========================
+
+Added support for OpenSSL 1.1.0 and removed support for versions prior to 1.0.2.
+
+Updated CERT IPFIX elements.
+
+Version 2.4.0: 2019-08-28
+=========================
+
+Enhanced the output of ipfixDump by (1) including the template's name with its
+list of elements, (2) adding the templates' names to the stats output, (3)
+marking scope elements in templates and their corresponding values in data
+records, and (4) including the name for list semantics.
+
+Fixed an issue in the libfixbuf.spec.in file, and removed the generated
+libfixbuf.spec file from the distribution.
+
+Changed how the information model handles the re-insertion an existing
+element to reuse the existing element instead of using new memory.
+
+Added stricter checking of the elements lengths' specified in a template.
+Currently a log message is written for an invalid length; in the future, this
+may cause the template to be rejected.
+
+Version 2.3.1: 2019-04-18
+=========================
+
+Fixed a double-freeing of memory and memory leaks in some of the error
+handling code.
+
+Version 2.3.0: 2019-03-18
+=========================
+
+Added the ipfixDump application which used to be included with YAF, and made
+many changes to the application.  Use configure --disable-tools to prevent
+building and installing ipfixDump.
+
+Fixed bugs in reading and writing information elements whose type was list and
+elementId was a value other than 291, 292, or 293.
+
+Changed the layout of the options templates used for exporting RFC 5610
+information element type information and exporting template metadata.
+
+Version 2.2.0: 2018-11-29
+=========================
+
+Added functions to return the buffer size required to read a template and the
+maximum buffer size to process all known templates in a session.
+
+Modified library to return an error when a user attempts to use a reserved
+template ID.
+
+Fixed a potential use-after-free bug triggered by pyfixbuf.
+
+Version 2.1.0: 2018-07-12
+=========================
+
+Added functions to update the Information Model with Information Elements read
+from a file or a string containing XML data.
+
+Ensured that an element's endian flag is properly set when incorporating
+elements from options records.
+
+Made GLib 2.18 or later a requirement.
+
+Version 2.0.0: 2018-05-02
+=========================
+
+This version is not backwards-compatible with fixbuf 1.x.
+
+There are no functional differences between this release and the 1.8
+release. All the changes are API changes and internal cleanups.
+
+Changed the source for the Information Model to the IANA XML version of the
+IPFIX Information Elements.
+
+Added a requirement for internal templates that their information element
+specifications have non-defaulted (non-zero) sizes.
+
+Simplified the new template callbacks, subsuming the three variants with one:
+fbSessionAddNewTemplateCallback()
+
+Made it the default to consider the source port when separating incoming UDP
+streams.  The function fbCollectorManageUDPStreamByPort() has been removed.
+
+Changed fbInfoElementWriteOptionsRecord() to take both the internal and
+external template id.
+
+Updated license to LGPL 3.
+
+Version 1.8.0: 2017-11-07
+=========================
+
+The ability to add template metadata to exported templates
+
+Macro to check fixbuf version number
+
+Minor bug fixes
+
+Version 1.7.1: 2015-10-09
+=========================
+
+Bug Fix for NetFlow v9 devices that implement Reverse Information Elements
+
+Version 1.7.0: 2015-07-01
+=========================
+
+Update IPFIX Information Elements to be compatible with IANA registry
+
+Add recursive freeing function fBufListFree() to free structured data elements
+
+Ignore extra filling bytes in sFlow records
+
+Bug Fix for NetFlow v9 Options Template Parsing
+
+Other Bug Fixes
+
+Version 1.6.2: 2014-12-03
+=========================
+
+Bug Fix for NetFlow v9 collectors with multiple streams
+
+Other Bug Fixes
+
+Version 1.6.1: 2014-10-14
+=========================
+
+Bug Fix for UDP connections that timeout frequently
+
+Version 1.6.0: 2014-09-29
+=========================
+
+New Support for sFlow
+
+Added support for decoding basicLists with unknown information elements
+
+New Template Callback Function
+
+Updated IPFIX Information Elements to be compatible with IANA registry
+
+Version 1.5.0: 2014-06-18
+=========================
+
+Updated IPFIX Information Elements to be compatible with IANA registry
+
+Added the ability to decode IPFIX from application's own data buffer
+
+Replaced select() with poll() for fbListeners.  Applications will now bind to
+all addresses returned by getaddrinfo
+
+Added an InfoModel Iterator
+
+Removed fbListenerGroupWaitAcceptCallback() API function
+
+Removed fbListenerWaitAcceptCallback() API function
+
+Renamed IPFIX Structured Data Type Semantic #defines
+
+Bug Fix for NetFlow v9 Options Templates
+
+Other Bug Fixes
+
+Version 1.4.0: 2013-12-02
+=========================
+
+pyfixbuf, a python API for libfixbuf, is included as a separate package within
+the tarball (optional install)
+
+UDP IPFIX Listeners now reject IPFIX messages with invalid version numbers
+
+Added Environment Variable, FB_SUPPRESS_LOGS, to suppress NetFlow v9 log
+messages
+
+NetFlow v9 Options Templates and Records are now collected and translated to
+IPFIX.
+
+An fbInfoElement_st now contains all of the properties listed in RFC 5610.
+
+Added a macro, FB_IE_INIT_FULL, to define an Information Element with
+additional properties
+
+New API functions to create Options Templates/Records for encoding Information
+Element type information.
+
+New API functions to collect Information Element type records.
+
+New Template Callback for application to provide context to an incoming
+Template.
+
+IPFIX Elements updated to be compatible with IANA registry.
+
+NetFlow v9 compatible elements added to default Information Model.
+
+Version 1.3.0: 2013-03-08
+=========================
+
+Maintain count of missed NetFlow v9 export packets per session
+
+Added API function fbCollectorGetNetflowMissed to retrieve missed packet count
+
+IPFIX elements updated
+
+Spread Disconnect Bug fix
+
+Version 1.2.0: 2012-09-14
+=========================
+
+UDP Collection Enhancements.
+
+Manage UDP sessions by peer address and observation domain.
+
+Version 1.1.2: 2012-06-07
+=========================
+
+Bug Fixes.
+
+NetFlow v9 Bug Fixes.
+
+Version 1.1.1: 2011-12-22
+=========================
+
+Bug Fixes.
+
+Version 1.1.0: 2011-10-31
+=========================
+
+New IPFIX Elements
+
+NetFlow v9 Enhancements and bug fixes
+
+Version 1.0.2: 2011-09-12
+=========================
+
+Bug Fixes
+
+Version 1.0.1: 2011-06-01
+=========================
+
+Fix to maintain compatibility with GLib prior to version 2.10
+
+Version 1.0.0: 2011-04-28
+=========================
+
+Added functionality to adhere to the proposed IPFIX extension: "Export of
+Structured Data in IPFIX".  This proposed standard allows for the following
+three new data types.
+
+Added new data type: fbBasicList_t to house fixbuf "basicLists."
+
+Added new data type: fbSubTemplateList_t to house fixbuf "subTemplateLists."
+
+Added new data type: fbSubTemplateMultiList_t to house fixbuf
+"subTemplateMultiLists."
+
+Added the functionality to handle multiple listeners, allowing for connections
+on multiple ports.
+
+Support for Netflow V9.
+
+Spread support has been expanded to allow for greater flexibility in using one
+exporter to publish to multiple groups.
+
+Templates are now managed on a per-group basis for a Spread exporter.
+
+Templates can now be multicasted to select Spread groups.
+
+Default Automatic Mode for Listeners is now set to true.
+
+Many other bug fixes.
+
+Version 0.9.0: 2010-07-27
+=========================
+
+Added support for Spread Toolkit to allow publish subscribe distribution of
+YAF sensor output.
+
+Version 0.8.0: 2008-09-09
+=========================
+
+Addition of NetFlow v9 input translation on network connections.  NetFlow v9
+only works as a collector (listener) and only over UDP.  (Most of those
+limitations are related to the nature of the NetFlow protocol itself.)
+
+Version 0.7.2: 2008-01-18
+=========================
+
+Minor build system change required to fix multithreaded fixbuf collection
+issues with skipfix in SiLK 0.11.9 and later.
+
+Version 0.7.1: 2007-09-28
+=========================
+
+Fixes encoding errors of octet array information elements on little-endian
+machines.
+
+Version 0.7.0: 2007-08-17
+=========================
+
+Fixes alignment issues on Solaris/SPARC; cross-platform build enhancements;
+support for - as stdin/stdout filename; partial flexible stream selection
+support; true biflow reverse PEN support.
+
+Version 0.6.0: 2007-05-17
+=========================
+
+libfixbuf 0.6.0 completely reorganizes the API to recenter it around an IPFIX
+Message Buffer object. It adds new, more flexible interfaces to lower level
+transport for building IPFIX Collecting and Exporting Processes, including a
+select()-based listener interface for multi-session collectors; support for
+SCTP and TLS over TCP as transport protocols; and support for reverse PEN
+based bidirectional flow export as in draft-ietf-ipfix-biflow-03. Storage of
+IPFIX Messages in files is supported, but the final message and final set
+support as in revision -00 of draft-trammell-ipfix-file has been removed.
+
+This release also renames all the calls and data structures to be in line with
+the conventions used in the NetSA SiLK codebase, and is therefore completely
+incompatible with previous releases; applications must be rewritten to use
+fixbuf 0.6.0.
+
+Version 0.5.0: 2006-09-29
+=========================
+
+libfixbuf 0.5.0 splits the API into application programming interface and
+transport programming interface, and adds new transport layers for TCP, UDP,
+and files.
+
+Version 0.4.1: 2006-07-07
+=========================
+
+libfixbuf 0.4.1 adds a new Information Element for YAF 0.1.6.
+
+Version 0.4.0: 2006-06-16
+=========================
+
+libfixbuf 0.4.0 is a bugfix and feature enhancement release.  The FixSession
+structure has been removed, to store templates per FixReader or FixWriter
+instance. This was done to support per-session (transient) scoping of template
+IDs. This is an incompatible API change; fixbuf applications will have to be
+updated to use the new 0.4.0 API.
+
+Version 0.3.2: 2006-03-17
+=========================
+
+libfixbuf 0.3.2 is a bugfix release. Transcode plan caching now works
+properly.
+
+Version 0.3.1: 2006-03-14
+=========================
+
+libfixbuf 0.3.1 is a bugfix and feature enhancement release. Support now
+exists for full template table export, to comply with periodic template export
+requirements in the IPFIX protocol. Reduced-length information element
+encoding is now supported, as well, with full transcoder support for
+transcoding between identical information elements of different arbitrary
+lengths.
+
+Version 0.3.0: 2006-02-03
+=========================
+
+libfixbuf 0.3.0 adds an information element registry, changing the way that
+information elements are programmatically added to templates. New information
+elements have been added to support YAF. Also new is FixVarfield, a much more
+usable interface for transcoding variable-length information elements.
+Variable-length transcoding support has been completely rewritten and tested.
+fixport and fixcollect have been removed; the upcoming YAF IPFIX export and
+collection facility will take their place. Corner-case bugs in the writer and
+transcoder have been fixed as well.
+
+Version 0.2.0: 2006-01-06
+=========================
+
+libfixbuf 0.2.0 is a redesign of the libfixbuf API, renaming most calls.  It
+adds MTU support for splitting record streams into multiple messages, built-in
+UDP export and collection support. Two new applications, fixport and
+fixcollect, are now provided for UDP export and collection. Additionally, this
+version modifies the API for handling private enterprise information elements,
+and adds new CERT private enterprise information elements for biflow support
+in NAF 0.4.2.
+
+Version 0.1.1: 2005-11-18
+=========================
+
+libfixbuf 0.1.1 is a bugfix release, fixing a read buffer reset bug that kept
+libfixbuf from reading multiple messages with the same reader.
+
+Version 0.1.0: 2005-10-31
+=========================
+
+libfixbuf 0.1.0 splits its session template table into "read" and "write"
+sides, to avoid template number space collisions when writing IPFIX filters
+using libfixbuf. It also splits calls to its low-level I/O functions to
+support future UDP and SCTP low-level I/O for IPFIX compliance. Alpha quality
+warnings still apply, though the API should be settling down soon.
+
+Version 0.0.7: 2005-10-03
+=========================
+
+libfixbuf 0.0.7 extends the FloCON preview release with Options Template Set
+support, (still untested but otherwise complete) variable-length information
+element support, and a few new information elements to support NAF 0.0.7. The
+library is still undocumented, and should still be considered alpha-quality.
+
+Version 0.0.3: 2005-09-16
+=========================
+
+libfixbuf 0.0.3 is the FloCON Developers' Preview Release of libfixbuf. This
+revision of libfixbuf is a partial implementation of the IPFIX protocol
+message format (as of September 2005) with support for long messages and sets
+as outlined in IETF individual draft draft-trammell-ipfix-file-00. Important
+features are missing, including:
+
+* Options Template Set support
+
+* Variable-length information element support (partial, untested)
+
+In addition, the API for this version is not documented, because it will
+change. Specificially:
+
+* Sessions support for information element registries, including type
+  information for each information element number. This will allow libfixbuf
+  to handle endian conversion, among other things.
+
+* Transcoder support for information element value translation within the
+  context of a message; e.g. relative to absolute flow times, flow times to
+  time and duration, etc.
+
+* Any other commentary received on API usability during or after FloCON will
+  be considered, and identified issues addressed.
+
+See the README file for more on using libfixbuf.

@@ -1,0 +1,405 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ipfixDump</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+</head>
+
+<body>
+
+<h1 id="NAME">NAME</h1>
+
+<p><b>ipfixDump</b> - Print contents of an IPFIX file as human-readable text</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code> ipfixDump [--in FILE_NAME] [--out FILE_NAME]
+           [--rfc5610] [--element-file FILE_NAME] [--yaf]
+           [{ --show=SHOW_LIST | --templates | --data |
+              --template-counts | --file-stats }]
+           [--octet-format=FORMAT] [--string-format=FORMAT]
+           [--suppress=ITEM_LIST]
+
+ ipfixDump [--version]
+
+ ipfixDump [--help]</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p><b>ipfixDump</b> is a tool to read an IPFIX file and print its contents as human-readable text to assist the user in analyzing the file. By default, <b>ipfixDump</b> prints all message headers, templates, data records, options templates, and options records to the output, plus a one line summary of the file&#39;s content.</p>
+
+<p>To select different output, use the <b>--show</b>, <b>--templates</b>, <b>--data</b>, <b>--template-counts</b>, or <b>--file-stats</b> switches.</p>
+
+<p><b>ipfixDump</b> supports IPFIX structured data in the form of basicLists, subTemplateLists, and subTemplateMultiLists.</p>
+
+<p>By default, <b>ipfixDump</b> reads the IPFIX file from the standard input and writes the text to the standard output. To specify the input or output file&#39;s location, use the <b>--in</b> or <b>--out</b> option, respectively.</p>
+
+<p><b>ipfixDump</b> requires the input file to contain the IPFIX templates that describe the data records within the file, and the template must appear before the records that use it. Any records that do not have a corresponding template are ignored.</p>
+
+<p>The default information model used by <b>ipfixDump</b> includes only the standard information elements defined by <a href="https://www.iana.org/assignments/ipfix/ipfix.xhtml">IANA</a> and provided by libfixbuf. There are three ways to augment the set of elements:</p>
+
+<ol>
+
+<li><p>The <b>--rfc5610</b> option instructs <b>ipfixDump</b> to watch the input for options records that define private enterprise information elements (as defined by <a href="https://tools.ietf.org/html/rfc5610.html">RFC5610</a>) and to add any unknown elements to the information model.</p>
+
+</li>
+<li><p>The <b>--element-file=<i>FILE_NAME</i></b> option tells <b>ipfixDump</b> to parse the contents of <i>FILE_NAME</i> and add those information elements to the information model. The argument is an XML file whose schema is that used by IANA&#39;s <a href="https://www.iana.org/assignments/ipfix/ipfix.xml">XML Information Element Registry</a>, with the following additions:</p>
+
+<dl>
+
+<dt id="cert:enterpriseId">cert:enterpriseId</dt>
+<dd>
+
+<p>A number representing the Private Enterprise Number of the element</p>
+
+</dd>
+<dt id="cert:reversible">cert:reversible</dt>
+<dd>
+
+<p>A boolean value (<code>true</code>, <code>yes</code>, or <code>1</code> for true; <code>false</code>, <code>no</code>, or <code>0</code> for false) that specifies whether the element may have a separate identity in a reverse flow.</p>
+
+</dd>
+</dl>
+
+<p>The <b>--element-file</b> option may be used multiple times to load multiple files, and the loaded elements replace existing elements with the same identifier.</p>
+
+</li>
+<li><p>The <b>--yaf</b> option loads the CERT private enterprise information elements into the information model. These elements are used by the NetSA tools <b>yaf(1)</b>, <b>pipeline(8)</b>, <b>super_mediator(1)</b>, and <b>rwsilk2ipfix(1)</b>. This option is implemented as a wrapper over the <b>--element-file</b> option where the file name is <i>cert_ipfix.xml</i> and <b>ipfixDump</b> checks several directories to attempt to find this file, stopping once it finds the first file. The list of directories, in search order, is</p>
+
+<ul>
+
+<li><p>the directory <i>../share/libfixbuf</i> relative to the directory containing the application</p>
+
+</li>
+<li><p>the <i>libfixbuf</i> subdirectory of the <code>datadir</code> directory specified when <b>ipfixDump</b> was configured (defaults to <i>$prefix/share</i>)</p>
+
+</li>
+<li><p>the <i>share/libfixbuf</i> subdirectory installation folder for the GLib-2 library</p>
+
+</li>
+<li><p>the <i>libfixbuf</i> subdirectory of the directories specified by the $XDG_DATA_DIRS environment variable, or <i>/usr/local/share</i> and <i>/usr/share/libfixbuf</i> when that variable is empty</p>
+
+</li>
+</ul>
+
+<p><b>ipfixDump</b> exits with an error if the <b>--yaf</b> option is given and it is unable to find the <i>cert_ipfix.xml</i> file. See <a href="https://tools.netsa.cert.org/cert-ipfix-registry/">https://tools.netsa.cert.org/cert-ipfix-registry/</a> for additional information about this file.</p>
+
+</li>
+</ol>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<p>The following options are available for <b>ipfixDump</b>:</p>
+
+<dl>
+
+<dt id="in-FILE_NAME"><b>--in</b> <i>FILE_NAME</i></dt>
+<dd>
+
+<p>Sets the input file name to <i>FILE_NAME</i>. When the option is not specified, <b>ipfixDump</b> reads from the standard input or exits with an error when the standard input is a terminal. <b>ipfixDump</b> reads from the standard input if <i>FILE_NAME</i> is &#39;<code>-</code>&#39;. Short option: <b>-i</b>.</p>
+
+</dd>
+<dt id="out-FILE_NAME"><b>--out</b> <i>FILE_NAME</i></dt>
+<dd>
+
+<p>Sets the output file name to <i>FILE_NAME</i>. If <i>FILE_NAME</i> exists, it is overwritten. The string &#39;<code>-</code>&#39; may be used to write to standard output (the default). Short option: <b>-o</b>.</p>
+
+</dd>
+<dt id="rfc5610"><b>--rfc5610</b></dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to scan the IPFIX input file for options records that define private enterprise information elements and to add the unknown elements to the information model.</p>
+
+</dd>
+<dt id="element-file-FILE_NAME"><b>--element-file</b> <i>FILE_NAME</i></dt>
+<dd>
+
+<p>Loads the XML file <i>FILE_NAME</i> and incorporates information element information found in it. The format of the file is described above. The option may be used multiple times to load multiple files, and later elements replace existing elements when they have the same identifier. Short option: <b>-e</b>.</p>
+
+</dd>
+<dt id="yaf"><b>--yaf</b></dt>
+<dd>
+
+<p>Searches for a file named <i>cert_ipfix.xml</i> in several locations and loads that file as if it was an argument to <b>--element-file</b>. <b>ipfixDump</b> exits with an error if it is unable to find the <i>cert_ipfix.xml</i> file. Short option: <b>-y</b>.</p>
+
+</dd>
+<dt id="show-SHOW_LIST"><b>--show</b>=<i>SHOW_LIST</i></dt>
+<dd>
+
+<p>Causes the output to contain only the categories specified in <i>SHOW_LIST</i>, a comma-separated list of the names described below. When none of <b>--show</b> or the other output selector options is given, <b>ipfixDump</b> defaults to <b>--show=templates,data</b>. This option has precedence over the other output selectors. Short option: <b>-s</b>.</p>
+
+<dl>
+
+<dt id="templates">templates</dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print the template records that appear in the input and to print the message header and footer (statistics) for messages that contain template records.</p>
+
+</dd>
+<dt id="data">data</dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print the data records that were read from the input and to print the message header and footer (statistics) for messages that contain data records.</p>
+
+</dd>
+<dt id="messages">messages</dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print the message header and message footer (statistics) for all messages.</p>
+
+</dd>
+<dt id="template-counts">template-counts</dt>
+<dd>
+
+<p>Causes <b>ipfixDump</b> to print, after the data and template records, a two or three column table where each row is includes a template ID defined in the input and the number of times data using that template was seen. If the input contains template description option records, the table includes the template name as the third column. The counts include uses in subTemplateLists and subTemplateMultiLists when a data record is present. If a list specifies a template ID but the list is empty, the count for that template ID is unchanged.</p>
+
+</dd>
+<dt id="file-stats">file-stats</dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print, at the end of the data and after the template-count table, the flowEndMilliseconds timestamps for the first and last record in the input, the minimum and maximum flowEndMilliseconds timestamps seen, and the message export times of the first and last IPFIX messages.</p>
+
+</dd>
+</dl>
+
+<p>When <b>--show</b> includes any of <b>templates</b>, <b>data</b>, <b>messages</b>, or <b>flow-stats</b>, the last line of the output summarizes the number of messages, number of data records, and number of templates records contained in the input.</p>
+
+</dd>
+<dt id="templates1"><b>--templates</b></dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print only template definitions and the message headers and footers for messages that contain a template set. May not be used with <b>--data</b>, <b>--file-stats</b>, or <b>--template-counts</b>. Equivalent to <b>--show=templates</b>. Short option: <b>-t</b>.</p>
+
+</dd>
+<dt id="data1"><b>--data</b></dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print only data records and the message headers and footers for messages that contain a data set. May not be used with <b>--templates</b>, <b>--file-stats</b>, or <b>--template-counts</b>. Equivalent to <b>--show=data</b>. Short option: <b>-d</b>.</p>
+
+</dd>
+<dt id="template-counts1"><b>--template-counts</b></dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print only a table showing the template IDs defined in the input and the number of times data using that template was seen. May not be used with <b>--templates</b>, <b>--data</b>, or <b>--file-stats</b>. Equivalent to <b>--show=template-counts</b>. Short option: <b>-c</b>.</p>
+
+</dd>
+<dt id="file-stats1"><b>--file-stats</b></dt>
+<dd>
+
+<p>Tells <b>ipfixDump</b> to print only the flowEndMilliseconds timestamps for the first and last record in the input, the minimum and maximum flowEndMilliseconds timestamps seen, and the message export times of the first and last IPFIX messages. Equivalent to <b>--show=file-stats</b>. Short option: <b>-f</b>.</p>
+
+</dd>
+<dt id="octet-format-FORMAT"><b>--octet-format</b>=<i>FORMAT</i></dt>
+<dd>
+
+<p>Sets the output for data record elements whose type is <b>octetArray</b>. The output always includes the length of the octetArray surrounded by square brackets (e.g., <code>[4]</code>) before the displayed value, if any. If the value&#39;s length is 0, only the length is printed. The default format is <code>short-hex</code>.</p>
+
+<dl>
+
+<dt id="none">none</dt>
+<dd>
+
+<p>Does not display anything other than the length.</p>
+
+</dd>
+<dt id="hexadecimal">hexadecimal</dt>
+<dd>
+
+<p>Outputs <code>0x</code> and then the hexadecimal value for each octet in the octetArray, e.g., <code>[4] 0x666f6f0a</code>.</p>
+
+</dd>
+<dt id="short-hex">short-hex</dt>
+<dd>
+
+<p>If the octetArray is a <i>fixed-width</i> element and its length is eight or less, displays the value in the <code>hexadecimal</code> format, otherwise displays nothing.</p>
+
+</dd>
+<dt id="base64">base64</dt>
+<dd>
+
+<p>Displays the value using base-64 encoding, e.g., <code>[4] Zm9vCg==</code>.</p>
+
+</dd>
+<dt id="hexdump">hexdump</dt>
+<dd>
+
+<p>Displays the value in the style of the <b>hexdump(1)</b> utility when invoked with the arguments <code>-v -C</code>. The output displays 16 octets of the value on each line. Each line has the same prefix as that of the element name followed by a vertical bar that aligns with the element name. That is followed by the line&#39;s offset displayed in hexadecimal, up to 16 octets each presented as a hexadecimal number, a vertical bar, those 16 octets presented as ASCII with a period for any non-printable or control character, followed by another vertical bar and a newline. The final line is displays the length of the value in hexadecimal. For example:</p>
+
+<pre><code> [4]
+ | 00000000  66 6f 6f 0a                                       |foo.            |
+ | 00000004</code></pre>
+
+</dd>
+<dt id="string">string</dt>
+<dd>
+
+<p>Displays the value as a string in double quotes (<code>&quot;</code>). Octet values 34 and 92 are displayed as <code>\&quot;</code> and <code>\\</code> respectively, other octet values from 32 (space) to 126 (tilde) inclusive are displayed as ASCII, and all other values are shown as escaped utf-8 (<code>\uNNNN</code>. For example, <code>[4] &quot;foo\u000A&quot;</code> where <code>\u000A</code> represents a newline.</p>
+
+</dd>
+</dl>
+
+</dd>
+<dt id="string-format-FORMAT"><b>--string-format</b>=<i>FORMAT</i></dt>
+<dd>
+
+<p>Sets the output for data record elements whose type is <b>string</b>. The output always includes the length of the string surrounded by square brackets (<code>[4]</code>) before the displayed value, if any. The default format is <code>quoted</code>.</p>
+
+<dl>
+
+<dt id="quoted">quoted</dt>
+<dd>
+
+<p>Displays the value as a string in double quotes (<code>&quot;</code>). Octet values 34 and 92 are displayed as <code>\&quot;</code> and <code>\\</code>, respectively, other octet values from 32 (space) to 126 (tilde) inclusive are displayed as ASCII, octet values 9 (tab), 10 (newline), and 13 (carriage return) are displayed as <code>\t</code>, <code>\n</code>, and <code>\r</code> respectively, and all other values are displayed as 2-character hexadecimal with a leading <code>\x</code>. For example, <code>[4] &quot;foo\n&quot;</code>. When the value&#39;s length is 0, output is <code>[0] &quot;&quot;</code>.</p>
+
+</dd>
+<dt id="raw">raw</dt>
+<dd>
+
+<p>Displays the raw string with no surrounding quotes and making no attempt to escape control characters. This is the behavior of <b>ipfixDump</b> before version 3.0.0.</p>
+
+</dd>
+<dt id="base641">base64</dt>
+<dd>
+
+<p>Displays the value using base-64 encoding, e.g., <code>[4] Zm9vCg==</code>. If the value&#39;s length is 0, only the length is printed.</p>
+
+</dd>
+<dt id="hexdump1">hexdump</dt>
+<dd>
+
+<p>Displays the value in the style of the <b>hexdump(1)</b> utility when invoked with the arguments <code>-v -C</code>. This format is described above under <b>--octet-format</b>.</p>
+
+</dd>
+<dt id="hexadecimal1">hexadecimal</dt>
+<dd>
+
+<p>Outputs <code>0x</code> and then the hexadecimal value for each octet in the string, e.g., <code>[4] 0x666f6f0a</code>. If the value&#39;s length is 0, only the length is printed.</p>
+
+</dd>
+<dt id="none1">none</dt>
+<dd>
+
+<p>Does not display anything other than the length.</p>
+
+</dd>
+</dl>
+
+</dd>
+<dt id="suppress-ITEM_LIST"><b>--suppress</b>=<i>ITEM_LIST</i></dt>
+<dd>
+
+<p>Disables the display of the items in <i>ITEM_LIST</i>. This may be useful when using <b>ipfixDump</b> to compare IPFIX files. The following items may be suppressed:</p>
+
+<dl>
+
+<dt id="record-number">record-number</dt>
+<dd>
+
+<p>For top-level records, do not display the record number.</p>
+
+</dd>
+<dt id="export-time">export-time</dt>
+<dd>
+
+<p>Do not display the export time in the message header.</p>
+
+</dd>
+<dt id="stream-offset">stream-offset</dt>
+<dd>
+
+<p>Do not display the stream offset in the message header.</p>
+
+</dd>
+<dt id="message-length">message-length</dt>
+<dd>
+
+<p>Do not display the message length in the message header.</p>
+
+</dd>
+<dt id="sequence-number">sequence-number</dt>
+<dd>
+
+<p>Do not display the sequence number in the message header.</p>
+
+</dd>
+<dt id="messages1">messages</dt>
+<dd>
+
+<p>Disables printing of the message header and message footer. The output still includes the number of messages, records, and templates seen in the file once the end of the input is reached. This overrides <b>--show=messages</b>.</p>
+
+</dd>
+</dl>
+
+</dd>
+<dt id="version"><b>--version</b></dt>
+<dd>
+
+<p>Causes <b>ipfixDump</b> to print the version and copyright information to standard error and exit. Short option: <b>-V</b>.</p>
+
+</dd>
+<dt id="help"><b>--help</b></dt>
+<dd>
+
+<p>Causes <b>ipfixDump</b> to print a brief usage message to the standard output and exit. Short option: <b>-h</b>.</p>
+
+</dd>
+</dl>
+
+<h1 id="EXAMPLES">EXAMPLES</h1>
+
+<p>In the following examples, the dollar sign (&quot;$&quot;) represents the shell prompt. The text after the dollar sign represents the command line.</p>
+
+<pre><code> $ ipfixDump --in - --out -
+
+ $ ipfixDump --in /data/ipfix.ipfix --out /data/text.txt --yaf</code></pre>
+
+<p>The <b>ipfixDump</b> output for a complete IPFIX message that contains a single options template record is:</p>
+
+<pre><code> --- Message Header ---
+ export time: 2021-02-09 19:56:53       observation domain id: 0
+ message length: 62                     sequence number: 0 (0)
+ stream offset: 0
+
+ --- Options Template Record --- tid: 53254 (0xd006), fields: 9, scope: 2 ---
+   privateEnterpriseNumber              (346) &lt;uint32&gt;       [4] {scope}
+   informationElementId                 (303) &lt;uint16&gt;       [2] {scope}
+   informationElementDataType           (339) &lt;uint8&gt;        [1]
+   informationElementSemantics          (344) &lt;uint8&gt;        [1]
+   informationElementUnits              (345) &lt;uint16&gt;       [2]
+   informationElementRangeBegin         (342) &lt;uint64&gt;       [8]
+   informationElementRangeEnd           (343) &lt;uint64&gt;       [8]
+   informationElementName               (341) &lt;string&gt;   [65535]
+   informationElementDescription        (340) &lt;string&gt;   [65535]
+
+ *** Msg Stats: 1 Template Records ***</code></pre>
+
+<p>Here is an example record that includes a subTemplateList:</p>
+
+<pre><code> --- Data Record 1332161 --- fields: 7, tmpl: 53252 (0xd004) tombstone_record ---
+   observationDomainId                 (149){s} : 0
+   exportingProcessId                  (144){s} : 45982
+   exporterConfiguredId           (6871/551){s} : 4646
+   paddingOctets                       (210)    : [6]
+   tombstoneId                    (6871/550)    : 0
+   observationTimeSeconds              (322)    : 2021-02-09 20:01:53
+   tombstoneAccessList            (6871/554)    : count: 1 {noneOf} tmpl: 53253 (0xd005) tombstone_access
+   +--- STL Record 1 --- fields: 2, tmpl: 53253 (0xd005) tombstone_access ---
+   + certToolId                     (6871/553) : 1
+   + observationTimeSeconds              (322) : 2021-02-09 20:01:53</code></pre>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Emily Sarneso and the CERT Network Situational Awareness Group Engineering Team, &lt;http://www.cert.org/netsa&gt;.</p>
+
+<p>Bug reports may be sent directly to the Network Situational Awareness team at &lt;netsa-help@cert.org&gt;.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><b>yaf(1)</b>, <b>yafscii(1)</b>, <b>yafdpi(1)</b>, <b>super_mediator(1)</b>, <a href="ipfix2json.html"><b>ipfix2json(1)</b></a>, <b>pipeline(8)</b>, <b>rwsilk2ipfix(1)</b>, <a href="https://tools.netsa.cert.org/cert-ipfix-registry/">https://tools.netsa.cert.org/cert-ipfix-registry/</a>, <a href="https://www.iana.org/assignments/ipfix/ipfix.xhtml">https://www.iana.org/assignments/ipfix/ipfix.xhtml</a></p>
+
+</body>
+
+</html>
+

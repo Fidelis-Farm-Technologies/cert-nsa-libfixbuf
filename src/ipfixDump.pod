@@ -1,0 +1,489 @@
+##  ipfixDump manual page       -*- mode: text; fill-column: 79 -*-
+
+##  Copyright 2014-2023 Carnegie Mellon University
+##  See license information in LICENSE.txt.
+
+=pod
+
+=head1 NAME
+
+B<ipfixDump> - Print contents of an IPFIX file as human-readable text
+
+=head1 SYNOPSIS
+
+ ipfixDump [--in FILE_NAME] [--out FILE_NAME]
+           [--rfc5610] [--element-file FILE_NAME] [--yaf]
+           [{ --show=SHOW_LIST | --templates | --data |
+              --template-counts | --file-stats }]
+           [--octet-format=FORMAT] [--string-format=FORMAT]
+           [--suppress=ITEM_LIST]
+
+ ipfixDump [--version]
+
+ ipfixDump [--help]
+
+=head1 DESCRIPTION
+
+B<ipfixDump> is a tool to read an IPFIX file and print its contents as
+human-readable text to assist the user in analyzing the file.  By default,
+B<ipfixDump> prints all message headers, templates, data records, options
+templates, and options records to the output, plus a one line summary of the
+file's content.
+
+To select different output, use the B<--show>, B<--templates>, B<--data>, 
+B<--template-counts>, or B<--file-stats> switches.
+
+B<ipfixDump> supports IPFIX structured data in the form of basicLists,
+subTemplateLists, and subTemplateMultiLists.
+
+By default, B<ipfixDump> reads the IPFIX file from the standard input and
+writes the text to the standard output.  To specify the input or output file's
+location, use the B<--in> or B<--out> option, respectively.
+
+B<ipfixDump> requires the input file to contain the IPFIX templates that
+describe the data records within the file, and the template must appear before
+the records that use it.  Any records that do not have a corresponding template
+are ignored.
+
+The default information model used by B<ipfixDump> includes only the standard
+information elements defined by
+L<IANA|https://www.iana.org/assignments/ipfix/ipfix.xhtml> and provided by
+libfixbuf.  There are three ways to augment the set of elements:
+
+=over 4
+
+=item 1
+
+The B<--rfc5610> option instructs B<ipfixDump> to watch the input for options
+records that define private enterprise information elements (as defined by
+L<RFC5610|https://tools.ietf.org/html/rfc5610.html>) and to add any unknown
+elements to the information model.
+
+=item 2
+
+The B<--element-file=I<FILE_NAME>> option tells B<ipfixDump> to parse the
+contents of I<FILE_NAME> and add those information elements to the information
+model.  The argument is an XML file whose schema is that used by IANA's L<XML
+Information Element Registry|https://www.iana.org/assignments/ipfix/ipfix.xml>,
+with the following additions:
+
+=over 4
+
+=item cert:enterpriseId
+
+A number representing the Private Enterprise Number of the element
+
+=item cert:reversible
+
+A boolean value (C<true>, C<yes>, or C<1> for true; C<false>, C<no>, or C<0>
+for false) that specifies whether the element may have a separate identity in a
+reverse flow.
+
+=back
+
+The B<--element-file> option may be used multiple times to load multiple files,
+and the loaded elements replace existing elements with the same identifier.
+
+=item 3
+
+The B<--yaf> option loads the CERT private enterprise information elements into
+the information model.  These elements are used by the NetSA tools B<yaf(1)>,
+B<pipeline(8)>, B<super_mediator(1)>, and B<rwsilk2ipfix(1)>.  This option is
+implemented as a wrapper over the B<--element-file> option where the file name
+is F<cert_ipfix.xml> and B<ipfixDump> checks several directories to attempt to
+find this file, stopping once it finds the first file.  The list of
+directories, in search order, is
+
+=over 4
+
+=item *
+
+the directory F<../share/libfixbuf> relative to the directory containing the
+application
+
+=item *
+
+the F<libfixbuf> subdirectory of the C<datadir> directory specified when
+B<ipfixDump> was configured (defaults to F<$prefix/share>)
+
+=item *
+
+the F<share/libfixbuf> subdirectory installation folder for the GLib-2 library
+
+=item *
+
+the F<libfixbuf> subdirectory of the directories specified by the
+$XDG_DATA_DIRS environment variable, or F</usr/local/share> and
+F</usr/share/libfixbuf> when that variable is empty
+
+=back
+
+B<ipfixDump> exits with an error if the B<--yaf> option is given and it is
+unable to find the F<cert_ipfix.xml> file.  See
+L<https://tools.netsa.cert.org/cert-ipfix-registry/> for additional information
+about this file.
+
+=back
+
+=head1 OPTIONS
+
+The following options are available for B<ipfixDump>:
+
+=over 4
+
+=item B<--in> I<FILE_NAME>
+
+Sets the input file name to I<FILE_NAME>.  When the option is not specified,
+B<ipfixDump> reads from the standard input or exits with an error when the
+standard input is a terminal.  B<ipfixDump> reads from the standard input if
+I<FILE_NAME> is 'C<->'.  Short option: B<-i>.
+
+=item B<--out> I<FILE_NAME>
+
+Sets the output file name to I<FILE_NAME>.  If I<FILE_NAME> exists, it is
+overwritten.  The string 'C<->' may be used to write to standard output (the
+default).  Short option: B<-o>.
+
+=item B<--rfc5610>
+
+Tells B<ipfixDump> to scan the IPFIX input file for options records that define
+private enterprise information elements and to add the unknown elements to the
+information model.
+
+=item B<--element-file> I<FILE_NAME>
+
+Loads the XML file I<FILE_NAME> and incorporates information element
+information found in it.  The format of the file is described above.  The
+option may be used multiple times to load multiple files, and later elements
+replace existing elements when they have the same identifier.  Short option:
+B<-e>.
+
+=item B<--yaf>
+
+Searches for a file named F<cert_ipfix.xml> in several locations and loads that
+file as if it was an argument to B<--element-file>.  B<ipfixDump> exits with an
+error if it is unable to find the F<cert_ipfix.xml> file.  Short option: B<-y>.
+
+=item B<--show>=I<SHOW_LIST>
+
+Causes the output to contain only the categories specified in I<SHOW_LIST>, a
+comma-separated list of the names described below.  When none of B<--show> or
+the other output selector options is given, B<ipfixDump> defaults to
+B<--show=templates,data>.  This option has precedence over the other output
+selectors.  Short option: B<-s>.
+
+=over 4
+
+=item templates
+
+Tells B<ipfixDump> to print the template records that appear in the input and
+to print the message header and footer (statistics) for messages that contain
+template records.
+
+=item data
+
+Tells B<ipfixDump> to print the data records that were read from the input and
+to print the message header and footer (statistics) for messages that contain
+data records.
+
+=item messages
+
+Tells B<ipfixDump> to print the message header and message footer (statistics)
+for all messages.
+
+=item template-counts
+
+Causes B<ipfixDump> to print, after the data and template records, a two or
+three column table where each row is includes a template ID defined in the
+input and the number of times data using that template was seen.  If the input
+contains template description option records, the table includes the template
+name as the third column.  The counts include uses in subTemplateLists and
+subTemplateMultiLists when a data record is present.  If a list specifies a
+template ID but the list is empty, the count for that template ID is unchanged.
+
+=item file-stats
+
+Tells B<ipfixDump> to print, at the end of the data and after the
+template-count table, the flowEndMilliseconds timestamps for the first and last
+record in the input, the minimum and maximum flowEndMilliseconds timestamps
+seen, and the message export times of the first and last IPFIX messages.
+
+=back
+
+When B<--show> includes any of B<templates>, B<data>, B<messages>, or
+B<flow-stats>, the last line of the output summarizes the number of messages,
+number of data records, and number of templates records contained in the input.
+
+=item B<--templates>
+
+Tells B<ipfixDump> to print only template definitions and the message headers
+and footers for messages that contain a template set.  May not be used with
+B<--data>, B<--file-stats>, or B<--template-counts>.  Equivalent to
+B<--show=templates>.  Short option: B<-t>.
+
+=item B<--data>
+
+Tells B<ipfixDump> to print only data records and the message headers and
+footers for messages that contain a data set.  May not be used with
+B<--templates>, B<--file-stats>, or B<--template-counts>.  Equivalent to
+B<--show=data>.  Short option: B<-d>.
+
+=item B<--template-counts>
+
+Tells B<ipfixDump> to print only a table showing the template IDs defined in
+the input and the number of times data using that template was seen.  May not
+be used with B<--templates>, B<--data>, or B<--file-stats>.  Equivalent to
+B<--show=template-counts>.  Short option: B<-c>.
+
+=item B<--file-stats>
+
+Tells B<ipfixDump> to print only the flowEndMilliseconds timestamps for the
+first and last record in the input, the minimum and maximum flowEndMilliseconds
+timestamps seen, and the message export times of the first and last IPFIX
+messages.  Equivalent to B<--show=file-stats>.  Short option: B<-f>.
+
+=item B<--octet-format>=I<FORMAT>
+
+Sets the output for data record elements whose type is B<octetArray>.  The
+output always includes the length of the octetArray surrounded by square
+brackets (e.g., C<[4]>) before the displayed value, if any.  If the value's
+length is 0, only the length is printed.  The default format is C<short-hex>.
+
+=over 4
+
+=item none
+
+Does not display anything other than the length.
+
+=item hexadecimal
+
+Outputs C<0x> and then the hexadecimal value for each octet in the octetArray,
+e.g., C<[4] 0x666f6f0a>.
+
+=item short-hex
+
+If the octetArray is a I<fixed-width> element and its length is eight or less,
+displays the value in the C<hexadecimal> format, otherwise displays nothing.
+
+=item base64
+
+Displays the value using base-64 encoding, e.g., C<[4] Zm9vCg==>.
+
+=item hexdump
+
+Displays the value in the style of the B<hexdump(1)> utility when invoked with
+the arguments C<-v -C>.  The output displays 16 octets of the value on each
+line.  Each line has the same prefix as that of the element name followed by a
+vertical bar that aligns with the element name.  That is followed by the line's
+offset displayed in hexadecimal, up to 16 octets each presented as a
+hexadecimal number, a vertical bar, those 16 octets presented as ASCII with a
+period for any non-printable or control character, followed by another vertical
+bar and a newline.  The final line is displays the length of the value in
+hexadecimal. For example:
+
+ [4]
+ | 00000000  66 6f 6f 0a                                       |foo.            |
+ | 00000004
+
+=item string
+
+Displays the value as a string in double quotes (C<">).  Octet values 34 and 92
+are displayed as C<\"> and C<\\> respectively, other octet values from 32
+(space) to 126 (tilde) inclusive are displayed as ASCII, and all other values
+are shown as escaped utf-8 (C<\uNNNN>.  For example, C<[4] "foo\u000A"> where
+C<\u000A> represents a newline.
+
+=back
+
+=item B<--string-format>=I<FORMAT>
+
+Sets the output for data record elements whose type is B<string>.  The output
+always includes the length of the string surrounded by square brackets (C<[4]>)
+before the displayed value, if any.  The default format is C<quoted>.
+
+=over 4
+
+=item quoted
+
+Displays the value as a string in double quotes (C<">).  Octet values 34 and 92
+are displayed as C<\"> and C<\\>, respectively, other octet values from 32
+(space) to 126 (tilde) inclusive are displayed as ASCII, octet values 9 (tab),
+10 (newline), and 13 (carriage return) are displayed as C<\t>, C<\n>, and C<\r>
+respectively, and all other values are displayed as 2-character hexadecimal
+with a leading C<\x>.  For example, C<[4] "foo\n">.  When the value's length is
+0, output is C<[0] "">.
+
+=item raw
+
+Displays the raw string with no surrounding quotes and making no attempt to
+escape control characters.  This is the behavior of B<ipfixDump> before version
+3.0.0.
+
+=item base64
+
+Displays the value using base-64 encoding, e.g., C<[4] Zm9vCg==>.  If the
+value's length is 0, only the length is printed.
+
+=item hexdump
+
+Displays the value in the style of the B<hexdump(1)> utility when invoked with
+the arguments C<-v -C>.  This format is described above under
+B<--octet-format>.
+
+=item hexadecimal
+
+Outputs C<0x> and then the hexadecimal value for each octet in the string,
+e.g., C<[4] 0x666f6f0a>.  If the value's length is 0, only the length is
+printed.
+
+=item none
+
+Does not display anything other than the length.
+
+=back
+
+=item B<--suppress>=I<ITEM_LIST>
+
+Disables the display of the items in I<ITEM_LIST>.  This may be useful when
+using B<ipfixDump> to compare IPFIX files.  The following items may be
+suppressed:
+
+=over 4
+
+=item record-number
+
+For top-level records, do not display the record number.
+
+=item export-time
+
+Do not display the export time in the message header.
+
+=item stream-offset
+
+Do not display the stream offset in the message header.
+
+=item message-length
+
+Do not display the message length in the message header.
+
+=item sequence-number
+
+Do not display the sequence number in the message header.
+
+=item messages
+
+Disables printing of the message header and message footer.  The output still
+includes the number of messages, records, and templates seen in the file once
+the end of the input is reached.  This overrides B<--show=messages>.
+
+=back
+
+=item B<--version>
+
+Causes B<ipfixDump> to print the version and copyright information to standard
+error and exit.  Short option: B<-V>.
+
+=item B<--help>
+
+Causes B<ipfixDump> to print a brief usage message to the standard output and
+exit.  Short option: B<-h>.
+
+=back
+
+=head1 EXAMPLES
+
+In the following examples, the dollar sign ("$") represents the shell
+prompt.  The text after the dollar sign represents the command line.
+
+ $ ipfixDump --in - --out -
+
+ $ ipfixDump --in /data/ipfix.ipfix --out /data/text.txt --yaf
+
+The B<ipfixDump> output for a complete IPFIX message that contains a single
+options template record is:
+
+ --- Message Header ---
+ export time: 2021-02-09 19:56:53	observation domain id: 0
+ message length: 62              	sequence number: 0 (0)
+ stream offset: 0
+
+ --- Options Template Record --- tid: 53254 (0xd006), fields: 9, scope: 2 ---
+   privateEnterpriseNumber              (346) <uint32>       [4] {scope}
+   informationElementId                 (303) <uint16>       [2] {scope}
+   informationElementDataType           (339) <uint8>        [1]
+   informationElementSemantics          (344) <uint8>        [1]
+   informationElementUnits              (345) <uint16>       [2]
+   informationElementRangeBegin         (342) <uint64>       [8]
+   informationElementRangeEnd           (343) <uint64>       [8]
+   informationElementName               (341) <string>   [65535]
+   informationElementDescription        (340) <string>   [65535]
+
+ *** Msg Stats: 1 Template Records ***
+
+Here is an example record that includes a subTemplateList:
+
+ --- Data Record 1332161 --- fields: 7, tmpl: 53252 (0xd004) tombstone_record ---
+   observationDomainId                 (149){s} : 0
+   exportingProcessId                  (144){s} : 45982
+   exporterConfiguredId           (6871/551){s} : 4646
+   paddingOctets                       (210)    : [6]
+   tombstoneId                    (6871/550)    : 0
+   observationTimeSeconds              (322)    : 2021-02-09 20:01:53
+   tombstoneAccessList            (6871/554)    : count: 1 {noneOf} tmpl: 53253 (0xd005) tombstone_access
+   +--- STL Record 1 --- fields: 2, tmpl: 53253 (0xd005) tombstone_access ---
+   + certToolId                     (6871/553) : 1
+   + observationTimeSeconds              (322) : 2021-02-09 20:01:53
+
+
+=head1 AUTHORS
+
+Emily Sarneso and the CERT Network Situational Awareness Group Engineering
+Team, E<lt>http://www.cert.org/netsaE<gt>.
+
+Bug reports may be sent directly to the Network Situational Awareness team at
+E<lt>netsa-help@cert.orgE<gt>.
+
+=head1 SEE ALSO
+
+B<yaf(1)>, B<yafscii(1)>, B<yafdpi(1)>, B<super_mediator(1)>, B<ipfix2json(1)>,
+B<pipeline(8)>, B<rwsilk2ipfix(1)>,
+L<https://tools.netsa.cert.org/cert-ipfix-registry/>,
+L<https://www.iana.org/assignments/ipfix/ipfix.xhtml>
+
+=cut
+
+##  @DISTRIBUTION_STATEMENT_BEGIN@
+##  libfixbuf 3.0.0
+##
+##  Copyright 2022 Carnegie Mellon University.
+##
+##  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+##  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+##  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+##  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+##  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+##  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+##  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+##  INFRINGEMENT.
+##
+##  Released under a GNU GPL 2.0-style license, please see LICENSE.txt or
+##  contact permission@sei.cmu.edu for full terms.
+##
+##  [DISTRIBUTION STATEMENT A] This material has been approved for public
+##  release and unlimited distribution.  Please see Copyright notice for
+##  non-US Government use and distribution.
+##
+##  Carnegie Mellon(R) and CERT(R) are registered in the U.S. Patent and
+##  Trademark Office by Carnegie Mellon University.
+##
+##  This Software includes and/or makes use of the following Third-Party
+##  Software subject to its own license:
+##
+##  1. GLib-2.0 (https://gitlab.gnome.org/GNOME/glib/-/blob/main/COPYING)
+##     Copyright 1995 GLib-2.0 Team.
+##
+##  2. Doxygen (http://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+##     Copyright 2021 Dimitri van Heesch.
+##
+##  DM22-0006
+##  @DISTRIBUTION_STATEMENT_END@

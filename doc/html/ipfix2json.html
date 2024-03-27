@@ -1,0 +1,280 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>ipfix2json</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+</head>
+
+<body>
+
+<h1 id="NAME">NAME</h1>
+
+<p><b>ipfix2json</b> - Print contents of an IPFIX file as json text</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<pre><code> ipfix2json [--in FILE_NAME] [--out FILE_NAME]
+            [--rfc5610] [--element-file FILE_NAME]
+            [--cert-element-path DIRECTORY_NAME]
+            [--templates] [--data]
+            [--full-structure] [--allow-duplicates]
+            [--octet-format FORMAT]
+
+ ipfix2json [--version]
+
+ ipfix2json [--help]</code></pre>
+
+<h1 id="DESCRIPTION">DESCRIPTION</h1>
+
+<p><b>ipfix2json</b> is a tool to read an IPFIX file and print its contents as json. <b>ipfix2json</b> prints templates, data records, options templates, and options records to the output.</p>
+
+<p><b>ipfix2json</b> supports IPFIX structured data in the form of basicLists, subTemplateLists, and subTemplateMultiLists. By default some of these container structures are not represented as they are in IPFIX, favoring a simpler format more conducive to the json format. For more information read about <b>--full-structure</b> below.</p>
+
+<p>By default, <b>ipfix2json</b> reads the IPFIX file from the standard input and writes the text to the standard output. To specify the input or output file&#39;s location, use the <b>--in</b> or <b>--out</b> option, respectively.</p>
+
+<p>Information elements whose data type is a time stamp are printed as a string in ISO-8601 format with no <code>T</code> between the date and time and fractional seconds if needed, for example, <code>&quot;2005-09-21 13:03:56.748Z&quot;</code>.</p>
+
+<p>IP addresses are printed as a string in the dotted-quad format for IPv4 and <code>:</code>-separated hexadecimal for IPv6.</p>
+
+<p>Information elements of data type <code>string</code> are printed as string and use the escape sequence <code>\u0000</code> for control characters and non-ASCII characters.</p>
+
+<p>Elements of type <code>octetArray</code> are printed using base64 encoding by default, and the <b>--octet-format</b> option may be used to change this as described in the <a href="#OPTIONS">&quot;OPTIONS&quot;</a> section below. The user is required to know which elements are string and which are octetArray.</p>
+
+<p><b>ipfix2json</b> requires the input file to contain the IPFIX templates that describe the data records within the file, and the template must appear before the records that use it. Any records that do not have a corresponding template are ignored.</p>
+
+<p>The default information model used by <b>ipfix2json</b> includes the standard information elements defined by <a href="https://www.iana.org/assignments/ipfix/ipfix.xhtml">IANA</a> provided by libfixbuf, and the CERT private enterprise information elements used by the NetSA tools <b>yaf(1)</b>, <b>pipeline(8)</b>, <b>super_mediator(1)</b>, and <b>rwsilk2ipfix(1)</b>. The CERT information element definitions are provided by the file named <i>cert_ipfix.xml</i>. <b>ipfix2json</b> checks several directories to attempt to find this file, stopping once it finds the first file. An additional path can be added to the search path by using the <b>--cert-element-path</b> option. The list of directories, in search order, is</p>
+
+<ul>
+
+<li><p>the directory <i>../share/libfixbuf</i> relative to the directory containing the application</p>
+
+</li>
+<li><p>the <i>libfixbuf</i> subdirectory of the <code>datadir</code> directory specified when <b>ipfix2json</b> was configured (defaults to <i>$prefix/share</i>)</p>
+
+</li>
+<li><p>the <i>share/libfixbuf</i> subdirectory installation folder for the GLib-2 library</p>
+
+</li>
+<li><p>the <i>libfixbuf</i> subdirectory of the directories specified by the $XDG_DATA_DIRS environment variable, or <i>/usr/local/share</i> and <i>/usr/share/libfixbuf</i> when that variable is empty</p>
+
+</li>
+</ul>
+
+<p><b>ipfix2json</b> exits with an error if it is unable to find the <i>cert_ipfix.xml</i> file. See <a href="https://tools.netsa.cert.org/cert-ipfix-registry/">https://tools.netsa.cert.org/cert-ipfix-registry/</a> for additional information about this file.</p>
+
+<p>There are two ways to augment the set of elements in <b>ipfix2json</b>&#39;s information model:</p>
+
+<ol>
+
+<li><p>The <b>--rfc5610</b> option instructs <b>ipfix2json</b> to watch the input for options records that define private enterprise information elements (as defined by <a href="https://tools.ietf.org/html/rfc5610.html">RFC5610</a>) and to add those elements to the information model.</p>
+
+</li>
+<li><p>The <b>--element-file=<i>FILE_NAME</i></b> option tells <b>ipfix2json</b> to parse the contents of <i>FILE_NAME</i> and add those information elements to the information model. The argument is an XML file whose schema is that used by IANA&#39;s <a href="https://www.iana.org/assignments/ipfix/ipfix.xml">XML Information Element Registry</a>, with the following additions:</p>
+
+<dl>
+
+<dt id="cert:enterpriseId">cert:enterpriseId</dt>
+<dd>
+
+<p>A number representing the Private Enterprise Number of the element</p>
+
+</dd>
+<dt id="cert:reversible">cert:reversible</dt>
+<dd>
+
+<p>A boolean value (<code>true</code>, <code>yes</code>, or <code>1</code> for true; <code>false</code>, <code>no</code>, or <code>0</code> for false) that specifies whether the element may have a separate identity in a reverse flow.</p>
+
+</dd>
+</dl>
+
+<p>The <b>--element-file</b> option may be used multiple times to load multiple files, and the loaded elements replace existing elements with the same identifier.</p>
+
+</li>
+</ol>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<p>The following options are available for <b>ipfix2json</b>:</p>
+
+<dl>
+
+<dt id="in-FILE_NAME"><b>--in</b> <i>FILE_NAME</i></dt>
+<dd>
+
+<p>Sets the input file name to <i>FILE_NAME</i>. When the option is not specified, <b>ipfix2json</b> reads from the standard input or exits with an error when the standard input is a terminal. <b>ipfix2json</b> reads from the standard input if <i>FILE_NAME</i> is &#39;<code>-</code>&#39;.</p>
+
+</dd>
+<dt id="out-FILE_NAME"><b>--out</b> <i>FILE_NAME</i></dt>
+<dd>
+
+<p>Sets the output file name to <i>FILE_NAME</i>. If <i>FILE_NAME</i> exists, it is overwritten. The string &#39;<code>-</code>&#39; may be used to write to standard output (the default). Short option: <b>-o</b>.</p>
+
+</dd>
+<dt id="rfc5610"><b>--rfc5610</b></dt>
+<dd>
+
+<p>Tells <b>ipfix2json</b> to scan the IPFIX input file for options records that define private enterprise information elements and to add those elements to the information model.</p>
+
+</dd>
+<dt id="element-file-FILE_NAME"><b>--element-file</b> <i>FILE_NAME</i></dt>
+<dd>
+
+<p>Loads the XML file <i>FILE_NAME</i> and incorporates information element information found in it. The format of the file is described above. The option may be used multiple times to load multiple files, and later elements replace existing elements when they have the same identifier. Short option: <b>-e</b>.</p>
+
+</dd>
+<dt id="cert-element-path-DIRECTORY_NAME"><b>--cert-element-path</b> <i>DIRECTORY_NAME</i></dt>
+<dd>
+
+<p>Adds <i>DIRECTORY_NAME</i> to the search path for the CERT information element XML file. This file must be located to properly process YAF and Super Mediator output. Short option: <b>-c</b>.</p>
+
+</dd>
+<dt id="templates"><b>--templates</b></dt>
+<dd>
+
+<p>Suppresses the printing of records, causing the output to contain only template records. Short option: <b>-t</b>.</p>
+
+</dd>
+<dt id="data"><b>--data</b></dt>
+<dd>
+
+<p>Suppresses the printing of templates, causing the output to contain only data records. Short option: <b>-d</b>.</p>
+
+</dd>
+<dt id="full-structure"><b>--full-structure</b></dt>
+<dd>
+
+<p>Produces json output that does not collapse any intermediate containers such as basicLists, subTemplateLists, and subTemplateMultiLists. The result of which resembles the original IPFIX structures more closely. A comparison of the outputs is given in <a href="#EXAMPLES">&quot;EXAMPLES&quot;</a> below.</p>
+
+</dd>
+<dt id="allow-duplicates"><b>--allow-duplicates</b></dt>
+<dd>
+
+<p>Potentially creates invalid JSON by allowing an object to contain duplicate keys. By default, when a template contains repeated information elements, <b>ipfix2json</b> prints the first instance using the element&#39;s name (for example <code>templateId</code>), the second instance using the name and the suffix &quot;-2&quot; (<code>templateId-2</code>), the third instance with the suffix &quot;-3&quot;, et cetera. A similar suffix is added when record a contains multiple subTemplateLists that use the same template. Using this option causes <b>ipfix2json</b> to disable use of these suffixes, which may make the output more human-readable.</p>
+
+</dd>
+<dt id="octet-format-FORMAT"><b>--octet-format</b> <i>FORMAT</i></dt>
+<dd>
+
+<p>Determines the output format of data record elements whose type is <code>octetArray</code>. The default format is <code>base64</code>.</p>
+
+<dl>
+
+<dt id="base64">base64</dt>
+<dd>
+
+<p>Displays the value using base-64 encoding, e.g., <code>&quot;Zm9vCg==&quot;</code>.</p>
+
+</dd>
+<dt id="string">string</dt>
+<dd>
+
+<p>Displays <code>octetArray</code> values in the same form as <code>string</code> values. Specifically, displays octets from 32 (space) to 126 (tilde) inclusive as ASCII except for octet value 34 (displayed as <code>\&quot;</code>) and 92 (<code>\\</code>). All other values are displayed as escaped utf-8. For example, <code>&quot;foo\u000A&quot;</code> where <code>\u000A</code> represents a newline.</p>
+
+</dd>
+<dt id="hexadecimal">hexadecimal</dt>
+<dd>
+
+<p>Outputs the hexadecimal value for each octet in the octetArray, e.g., <code>&quot;666f6f0a&quot;</code>.</p>
+
+</dd>
+<dt id="empty">empty</dt>
+<dd>
+
+<p>Outputs an empty string as the value, <code>&quot;&quot;</code>.</p>
+
+</dd>
+</dl>
+
+</dd>
+<dt id="version"><b>--version</b></dt>
+<dd>
+
+<p>Prints version and copyright information to standard error and exits. Short option: <b>-V</b>.</p>
+
+</dd>
+<dt id="help"><b>--help</b></dt>
+<dd>
+
+<p>Prints a brief usage message to the standard output and exits. Short option: <b>-h</b>.</p>
+
+</dd>
+</dl>
+
+<h1 id="EXAMPLES">EXAMPLES</h1>
+
+<p>In the following examples, the dollar sign (&quot;$&quot;) represents the shell prompt. The text after the dollar sign represents the command line.</p>
+
+<pre><code> $ ipfix2json --in - --out -
+
+ $ ipfix2json --in /data/ipfix.ipfix --out /data/text.txt</code></pre>
+
+<h2 id="Condensed-vs-Full-Structure-output">Condensed vs Full Structure output</h2>
+
+<p><b>ipfix2json</b> supports IPFIX structured data in the form of basicLists, subTemplateLists, and subTemplateMultiLists. By default some of these container structures are not represented as they are in IPFIX, favoring a simpler format more conducive to the json format.</p>
+
+<p>By default (condensed) output resembles the following:</p>
+
+<pre><code> {
+     &quot;template:0x123()&quot;: {
+         &quot;informationElementText&quot;: &quot;value&quot;,
+         &quot;informationElementInt&quot;: 123,
+         &quot;template:0x456()&quot;: [
+             {
+                 &quot;informationElementText&quot;: &quot;value&quot;,
+                 &quot;informationElementInt&quot;: 123
+             }
+         ],
+         &quot;template:0x789()&quot;: [
+             {
+                 &quot;informationElementInt&quot;: [789,456],
+                 &quot;informationElementText&quot;: [&quot;abc&quot;,&quot;def&quot;]
+             }
+         ]
+     }
+ }</code></pre>
+
+<p>When <b>--full-structure</b> is used, <b>ipfix2json</b> does not collapse any intermediate containers such as basicLists, subTemplateLists, and subTemplateMultiLists. The result of which resembles the original IPFIX structures more closely:</p>
+
+<pre><code> {
+     &quot;template:0x123()&quot;: {
+         &quot;informationElementText&quot;: &quot;value&quot;,
+         &quot;informationElementInt&quot;: 123,
+         &quot;subTemplateMultiList&quot;: {
+             &quot;template:0x456()&quot;: [
+                 {
+                     &quot;informationElementText&quot;: &quot;value&quot;,
+                     &quot;informationElementInt&quot;: 123
+                 }
+             ],
+             &quot;template:0x789()&quot;: [
+                 {
+                     &quot;basicList&quot;: {
+                         &quot;informationElementInt&quot;: [789,456]
+                     },
+                     &quot;basicList&quot;: {
+                         &quot;informationElementText&quot;: [&quot;abc&quot;,&quot;def&quot;]
+                     }
+                 }
+             ]
+         }
+     }
+ }</code></pre>
+
+<p>NOTE: No content other than container information elements is added or removed with either format.</p>
+
+<h1 id="AUTHORS">AUTHORS</h1>
+
+<p>Emily Sarneso, Matt Coates and the CERT Network Situational Awareness Group Engineering Team, &lt;http://www.cert.org/netsa&gt;.</p>
+
+<p>Bug reports may be sent directly to the Network Situational Awareness team at &lt;netsa-help@cert.org&gt;.</p>
+
+<h1 id="SEE-ALSO">SEE ALSO</h1>
+
+<p><b>yaf(1)</b>, <b>yafscii(1)</b>, <b>yafdpi(1)</b>, <b>super_mediator(1)</b>, <b>pipeline(8)</b>, <b>rwsilk2ipfix(1)</b>, <a href="https://tools.netsa.cert.org/cert-ipfix-registry/">https://tools.netsa.cert.org/cert-ipfix-registry/</a>, <a href="https://www.iana.org/assignments/ipfix/ipfix.xhtml">https://www.iana.org/assignments/ipfix/ipfix.xhtml</a></p>
+
+</body>
+
+</html>
+

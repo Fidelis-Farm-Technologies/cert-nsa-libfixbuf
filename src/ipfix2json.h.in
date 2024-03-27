@@ -1,0 +1,117 @@
+/*
+ *  Copyright 2019-2023 Carnegie Mellon University
+ *  See license information in LICENSE.txt.
+ */
+/**
+ *  @file ipfix2json.h
+ */
+/*
+ *  ------------------------------------------------------------------------
+ *  Authors: Emily Sarneso, Matt Coates
+ *  ------------------------------------------------------------------------
+ */
+
+#include <fixbuf/public.h>
+
+#define FIXBUF_PACKAGE_NAME    "@FIXBUF_PACKAGE_NAME@"
+#define FIXBUF_PACKAGE_VERISON "@FIXBUF_PACKAGE_VERSION@"
+#define FIXBUF_PACKAGE_DATADIR "@FIXBUF_PACKAGE_DATADIR@"
+
+#define CERT_IPFIX_BASENAME    "cert_ipfix.xml"
+
+/* size of buffer to hold template ID and name */
+#define TMPL_NAME_BUFSIZ    128
+
+typedef struct tmplContext_st {
+    /* the indexes of the templateId(0) and templateName(1) elements of a
+     * template metadata template */
+    uint16_t   meta_tmpl[2];
+    /* number of elements in the template */
+    uint32_t   count;
+    /* memory octets required to hold record that uses this template */
+    uint16_t   len;
+    /* the template ID */
+    uint16_t   tid;
+    /* whether this template describes template metadata */
+    gboolean   is_meta_template;
+    /* whether this template describes element metadata (RFC5610) */
+    gboolean   is_meta_element;
+} tmplContext_t;
+
+/**
+ *  How to display octetArray values
+ */
+typedef enum OctetArrayFormat_en {
+    /* show an empty string */
+    OCTET_ARRAY_EMPTY,
+    /* show as a base64 value */
+    OCTET_ARRAY_BASE64,
+    /* show as a string with non-ascii encoded as escaped UTF-8 */
+    OCTET_ARRAY_STRING,
+    /* show as hexadecimal value */
+    OCTET_ARRAY_HEXADECIMAL
+} OctetArrayFormat_t;
+
+
+void
+idPrintTemplate(
+    FILE           *fp,
+    fbTemplate_t   *tmpl,
+    tmplContext_t  *ctx);
+
+void
+idPrintDataRecord(
+    FILE        *fp,
+    fbRecord_t  *tmpl);
+
+void
+idFormatTemplateId(
+    char    *tmpl_str,
+    int      tid,
+    size_t   tmpl_str_bufsiz);
+
+extern GHashTable        *template_names;
+extern GStringChunk      *object_keys;
+
+extern gboolean           full_structure;
+extern gboolean           allow_duplicate_keys;
+extern OctetArrayFormat_t octet_array_format;
+
+
+/*
+ *  @DISTRIBUTION_STATEMENT_BEGIN@
+ *  libfixbuf 3.0.0
+ *
+ *  Copyright 2022 Carnegie Mellon University.
+ *
+ *  NO WARRANTY. THIS CARNEGIE MELLON UNIVERSITY AND SOFTWARE ENGINEERING
+ *  INSTITUTE MATERIAL IS FURNISHED ON AN "AS-IS" BASIS. CARNEGIE MELLON
+ *  UNIVERSITY MAKES NO WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED,
+ *  AS TO ANY MATTER INCLUDING, BUT NOT LIMITED TO, WARRANTY OF FITNESS FOR
+ *  PURPOSE OR MERCHANTABILITY, EXCLUSIVITY, OR RESULTS OBTAINED FROM USE OF
+ *  THE MATERIAL. CARNEGIE MELLON UNIVERSITY DOES NOT MAKE ANY WARRANTY OF
+ *  ANY KIND WITH RESPECT TO FREEDOM FROM PATENT, TRADEMARK, OR COPYRIGHT
+ *  INFRINGEMENT.
+ *
+ *  Released under a GNU GPL 2.0-style license, please see LICENSE.txt or
+ *  contact permission@sei.cmu.edu for full terms.
+ *
+ *  [DISTRIBUTION STATEMENT A] This material has been approved for public
+ *  release and unlimited distribution.  Please see Copyright notice for
+ *  non-US Government use and distribution.
+ *
+ *  Carnegie Mellon(R) and CERT(R) are registered in the U.S. Patent and
+ *  Trademark Office by Carnegie Mellon University.
+ *
+ *  This Software includes and/or makes use of the following Third-Party
+ *  Software subject to its own license:
+ *
+ *  1. GLib-2.0 (https://gitlab.gnome.org/GNOME/glib/-/blob/main/COPYING)
+ *     Copyright 1995 GLib-2.0 Team.
+ *
+ *  2. Doxygen (http://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
+ *     Copyright 2021 Dimitri van Heesch.
+ *
+ *  DM22-0006
+ *  @DISTRIBUTION_STATEMENT_END@
+ */
