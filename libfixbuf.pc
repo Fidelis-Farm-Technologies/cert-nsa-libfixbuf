@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: libfixbuf
+Description: IPFIX Message Format Implementation
+Version: 3.0.0.alpha2
+Libs: -L${libdir} -lfixbuf  -lpthread  -lgthread-2.0 -pthread -lglib-2.0
+Cflags: -I${includedir} 
+Requires: glib-2.0 >= 2.18
